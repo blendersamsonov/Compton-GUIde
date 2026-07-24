@@ -69,6 +69,7 @@ from compton_gui.models import discover_models
 BLUE = "#d6e4f5"
 RED = "#f5d6d6"
 YELLOW = "#f7f0c0"
+GREY = "#e4e4e4"
 
 
 # ---------------------------------------------------------------------------
@@ -198,6 +199,7 @@ class DFE4App(tk.Tk):
         self._build_electrons_panel()
         self._build_laser_panel()
         self._build_compton_panel()
+        self._build_model_params_panel()
         self._build_plot_area()
         self._wire_live_updates()
         self._update_derived()
@@ -261,6 +263,7 @@ class DFE4App(tk.Tk):
     def _on_model_selected(self):
         name = self.model_var.get()
         self.active_adapter = self.models[name]
+        self._rebuild_model_params_panel()
         self._apply_model_capabilities()
 
     def _apply_model_capabilities(self):
@@ -586,6 +589,39 @@ class DFE4App(tk.Tk):
         tk.Label(rightb, text="Recoil parameter:", bg=YELLOW, font=mono, anchor="w").grid(row=0, column=0, sticky="w", padx=5, pady=2)
         self.stat_lbls["recoil_q"] = tk.Label(rightb, text="--", bg=YELLOW, font=mono, anchor="w")
         self.stat_lbls["recoil_q"].grid(row=0, column=1, sticky="w", padx=5, pady=2)
+
+    # ---- Model parameters panel (grey) -- model-specific numeric fields,
+    # rebuilt whenever the active model changes (see _on_model_selected).
+    def _build_model_params_panel(self):
+        self.model_params_frame = tk.LabelFrame(
+            self, text="MODEL PARAMETERS", bg=GREY, fg="#123",
+            font=("TkDefaultFont", 14, "bold"))
+        self.model_params_frame.pack(side="top", fill="x", padx=6, pady=3)
+        self._rebuild_model_params_panel()
+
+    def _rebuild_model_params_panel(self):
+        """Repopulate the Model Parameters panel from
+        ``self.active_adapter.extra_params()``. Never re-packs the frame
+        itself (only its children) so switching models repeatedly doesn't
+        reorder it relative to the plot area below."""
+        for child in self.model_params_frame.winfo_children():
+            child.destroy()
+
+        specs = self.active_adapter.extra_params()
+        if not specs:
+            tk.Label(self.model_params_frame, bg=GREY, fg="#567",
+                     text="(this model has no model-specific parameters)",
+                     font=("TkDefaultFont", 9, "italic")).grid(
+                row=0, column=0, sticky="w", padx=8, pady=4)
+            return
+
+        # Preserve values already entered if the key survives a model
+        # switch (e.g. switching away and back); otherwise use the
+        # adapter's own default.
+        seeded = [(label, self.fields[key].get() if key in self.fields else default, key)
+                  for label, default, key in specs]
+        add_field_grid(self.model_params_frame, seeded, self.fields,
+                       n_cols=4, bg=GREY, width=8)
 
     # ---- plots (tabbed notebook) ----------------------------------------
     def _build_plot_area(self):

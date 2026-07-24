@@ -64,6 +64,9 @@ class Dfe5Adapter:
     def available(self) -> tuple[bool, str]:
         return True, ""
 
+    def extra_params(self) -> list[tuple[str, float, str]]:
+        return []
+
     def params_to_config(self, fields: dict, quantum: bool = False):
         """Convert the GUI fields into a physics Config plus a driver dict.
 

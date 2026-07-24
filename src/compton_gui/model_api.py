@@ -219,6 +219,16 @@ class ModelAdapter(Protocol):
         (False, reason). Must never raise."""
         ...
 
+    def extra_params(self) -> list[tuple[str, float, str]]:
+        """Model-specific numeric fields with no shared-panel analogue
+        (dfe5's Electrons/Laser/Compton panels), as (label, default, key)
+        triples -- the same shape app.py's add_field_grid already consumes.
+        The GUI renders these in a dedicated pane that's rebuilt whenever the
+        active model changes, and feeds the resulting values into the same
+        flat ``fields`` dict passed to ``params_to_config``. Return ``[]`` if
+        the model has none (e.g. dfe5 today)."""
+        ...
+
     def params_to_config(self, fields: dict, quantum: bool) -> tuple[Any, dict]: ...
 
     def run(self, cfg: Any, n_mc: int, seed: int,
@@ -265,6 +275,9 @@ class UnavailableAdapter:
 
     def available(self) -> tuple[bool, str]:
         return False, self._reason
+
+    def extra_params(self) -> list[tuple[str, float, str]]:
+        return []
 
     def params_to_config(self, fields, quantum):
         raise NotImplementedError(f"{self._name}: {self._reason}")

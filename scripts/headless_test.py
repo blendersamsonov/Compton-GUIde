@@ -76,8 +76,12 @@ def test_model(name: str, adapter) -> bool:
     ok = True
     caps = adapter.capabilities()
 
-    # 1. params_to_config -- same call the GUI's on_start() makes
-    fields = make_fields()
+    # 1. params_to_config -- same call the GUI's on_start() makes. Fields are
+    #    seeded with the shared defaults plus this model's own extra_params()
+    #    defaults (app.py's Model Parameters panel does the equivalent via
+    #    add_field_grid before ever calling params_to_config).
+    extras = {key: default for _label, default, key in adapter.extra_params()}
+    fields = make_fields(extras)
     try:
         cfg, extra = adapter.params_to_config(fields, quantum=False)
     except Exception as e:
