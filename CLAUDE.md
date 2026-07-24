@@ -1,20 +1,21 @@
-# compton-gui
+# Compton-GUIde
 
 Standalone, model-agnostic Tkinter GUI for Compton-scattering physics
 engines. Plugs in physics packages through a shared `ModelAdapter`
 contract (`model_api.py`) instead of a hardcoded import, so this project
 and the physics packages it drives don't depend on each other's
-internals — only on the adapter shape.
+internals — only on the adapter shape. Python package name: `compton_guide`
+(repo/brand name stylized `Compton-GUIde` — "GUI" capitalized on purpose).
 
-Two engines are currently registered (`compton_gui/models.py`):
-- `dfe5` → `../MC-Kost` (`dfe5_compton_mc.py`), an event-generator MC, always available (CPU only).
+Two engines are currently registered (`compton_guide/models.py`):
+- `kascade` → `../MC-Kost` (`kascade.py`), an event-generator MC, always available (CPU only).
 - `xigma-i` → the `xigma_i` package (GPU/cupy-only `Compton` class), shown greyed-out in the Model menu if cupy/CUDA isn't usable.
 
 ## Layout
 
 ```
-src/compton_gui/
-  app.py              # DFE4App(tk.Tk) — the actual GUI. ~1150 lines.
+src/compton_guide/
+  app.py              # ComptonGuideApp(tk.Tk) — the actual GUI. ~1180 lines.
   models.py           # discover_models() — model registry setup. Deliberately
                        # has NO tkinter/matplotlib import, so it (and anything
                        # built on it) can be exercised headlessly.
@@ -24,11 +25,11 @@ src/compton_gui/
                        # validate_results(), MODEL_REGISTRY.
   bootstrap.py          # sys.path wiring for the two physics repos (see below).
   physics_constants.py  # Local CODATA constants (C_LIGHT, HBAR, MEC2_EV, ...) —
-                         # duplicated here rather than imported from dfe5, on
+                         # duplicated here rather than imported from kascade, on
                          # purpose (mirrors xigma_i/gui_adapter.py's own
                          # precedent of local constant duplication).
-  adapters/dfe5_adapter.py  # Dfe5Adapter — wraps dfe5_compton_mc with zero
-                             # changes to that package's own code.
+  adapters/kascade_adapter.py  # KascadeAdapter — wraps kascade.py with zero
+                                # changes to that package's own code.
 scripts/
   run_gui.py           # Entry point: python3 scripts/run_gui.py
   headless_test.py     # No-display smoke test — see "Testing" below.
@@ -40,7 +41,7 @@ docs/new-features-plan.md  # Status table of which observable is ready /
 Note: `xigma_i`'s adapter (`gui_adapter.py`) lives in the `xigma_i` repo itself,
 not here — it was already-completed integration work at the time this repo
 was split out, and moving it would have touched that repo more than
-necessary. `compton-gui` only ever does `from xigma_i import gui_adapter`;
+necessary. `compton_guide` only ever does `from xigma_i import gui_adapter`;
 decoupling is achieved without relocating that file.
 
 ## The ModelAdapter contract, and the bug it caused
@@ -54,15 +55,28 @@ this GUI project. This is intentional and documented in both files.
 **Consequence: never use `isinstance(x, SampledSpectrum)` / `isinstance(x, BinnedSpectrum)`
 etc. to distinguish "sampled" from "binned" results if both branches check a
 specific class.** A single `isinstance(x, SampledSpectrum)` check with an
-`else` for everything else is fine (real for dfe5, and correctly false for
+`else` for everything else is fine (real for kascade, and correctly false for
 anything from xigma-i). But `if isinstance(x, A): ... elif isinstance(x, B): ...`
 against *both* `model_api` classes will silently do nothing for xigma-i's
 duck-typed equivalents. This exact bug hit `validate_results()` (raised a
-bogus "unexpected type" error, reported by the user as "error on unexpected
+bogus "unexpected type" error, reported as "error on unexpected
 BinnedSpectrum") and three `app.py` render methods (silently rendered blank
 tabs). Fixed by switching to duck-typing: check `hasattr(x, "weight")` (sampled)
 vs. `hasattr(x, "dNdE_per_eV"/"rate"/"density")` (binned) instead. If you add
 a new paired Sampled/Binned dataclass, follow the same pattern.
+
+## Model-specific parameters (`extra_params()`)
+
+Beyond the shared Electrons/Laser/Compton-photons panels (common to every
+model), an adapter can declare extra numeric fields with no shared-panel
+analogue via `ModelAdapter.extra_params() -> list[(label, default, key)]`
+(same shape `add_field_grid` already consumes). `app.py`'s grey
+"MODEL PARAMETERS" panel (`_build_model_params_panel`/`_rebuild_model_params_panel`)
+rebuilds itself from this whenever the active model changes, feeding the
+resulting values into the same flat `fields` dict passed to
+`params_to_config`. `kascade` currently declares none (`[]`); `xigma-i`
+declares `beta_ff`/`phi_pol` (its own extras with no `kascade` analogue).
+Return `[]` if a model has nothing extra to add.
 
 ## Running it
 
@@ -72,12 +86,12 @@ python3 scripts/run_gui.py
 
 Needs `numpy`, `matplotlib`, system Tk (`tkinter`), and — only if you want
 `xigma-i` enabled rather than greyed-out — `cupy` + a working CUDA setup.
-`bootstrap.py` puts `dfe5_compton_mc`/`xigma_i` onto `sys.path`
+`bootstrap.py` puts `kascade`/`xigma_i` onto `sys.path`
 automatically by scanning this project's sibling directories for one
-containing `dfe5_compton_mc.py` (for dfe5) or `src/xigma_i/gui_adapter.py`
+containing `kascade.py` (for the kascade engine) or `src/xigma_i/gui_adapter.py`
 (for xigma_i) — content-based, not a hardcoded default path, so it
 survives both sibling directories being named differently on different
-machines. Override with `COMPTON_GUI_DFE5_PATH` / `COMPTON_GUI_XIGMA_SRC`
+machines. Override with `COMPTON_GUIDE_KASCADE_PATH` / `COMPTON_GUIDE_XIGMA_SRC`
 env vars if either checkout lives outside this project's sibling
 directories entirely, or if autodiscovery finds more than one candidate
 and picks the wrong one (it warns to stderr when that happens).
@@ -96,7 +110,7 @@ pass it when you want to see anything.)
 ## Testing (headless, no display needed)
 
 ```bash
-python3 scripts/headless_test.py                       # dfe5 only, cupy not required
+python3 scripts/headless_test.py                       # kascade only, cupy not required
 conda run -n core --no-capture-output python3 scripts/headless_test.py   # + xigma-i, needs GPU
 ```
 
@@ -113,9 +127,9 @@ without cupy/GPU.
 Pattern established by the existing four (temporal envelope, spatial
 distribution, angular distribution, angular-range spectrum):
 1. Add a `Sampled*`/`Binned*` dataclass pair to `model_api.py` if the shape
-   differs between an event-generator model (dfe5) and a semi-analytic one
+   differs between an event-generator model (kascade) and a semi-analytic one
    (xigma-i); add a `supports_*` flag to `ModelCapabilities` (default `False`).
-2. Populate it in `Dfe5Adapter.run()` (usually cheap — dfe5 already has the
+2. Populate it in `KascadeAdapter.run()` (usually cheap — kascade already has the
    raw per-photon arrays) and in `xigma_i/gui_adapter.py`'s `run_simulation`
    (check whether `core.Compton` already computes what you need internally
    before assuming a new kernel is required — `time_envelope` and the
@@ -136,3 +150,6 @@ distribution, angular distribution, angular-range spectrum):
 - No automated test for `app.py`'s actual Tkinter rendering (only the
   adapter/model layer is covered by `headless_test.py`) — testing the real
   widget tree needs a display (or Xvfb), which hasn't been set up.
+- `Conventions-and-units.md` at the repo root is a design sketch for a
+  future parameter-semantics/unit-normalization layer (pint-based) — not
+  implemented, not wired into anything yet.

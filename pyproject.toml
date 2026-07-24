@@ -1,7 +1,7 @@
 [project]
-name = "compton-gui"
+name = "compton-guide"
 version = "0.1.0"
-description = "Standalone Tkinter GUI front-end for pluggable Compton-scattering physics models (dfe5, xigma-i, ...)"
+description = "Standalone Tkinter GUI front-end for pluggable Compton-scattering physics models (kascade, xigma-i, ...)"
 requires-python = ">=3.10"
 dependencies = [
     "numpy",

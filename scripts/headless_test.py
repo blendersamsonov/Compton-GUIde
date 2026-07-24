@@ -25,8 +25,8 @@ _SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
 if _SRC not in sys.path:
     sys.path.insert(0, _SRC)
 
-from compton_gui.model_api import validate_results
-from compton_gui.models import discover_models
+from compton_guide.model_api import validate_results
+from compton_guide.models import discover_models
 
 
 # Same defaults as the GUI's Electrons/Laser/Compton panels

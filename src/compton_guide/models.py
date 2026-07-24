@@ -5,7 +5,7 @@ without a display or those packages installed.
 
 from __future__ import annotations
 
-from compton_gui.model_api import UnavailableAdapter, register, registered_models
+from compton_guide.model_api import UnavailableAdapter, register, registered_models
 
 
 def discover_models() -> dict:
@@ -14,11 +14,11 @@ def discover_models() -> dict:
     registered as an UnavailableAdapter so it still shows up, disabled, in
     the GUI's Model menu instead of silently vanishing. Returns the
     registry snapshot (see ``model_api.registered_models``)."""
-    from compton_gui import bootstrap
+    from compton_guide import bootstrap
     bootstrap.setup_paths()
 
-    from compton_gui.adapters.dfe5_adapter import Dfe5Adapter
-    register("dfe5", Dfe5Adapter())
+    from compton_guide.adapters.kascade_adapter import KascadeAdapter
+    register("kascade", KascadeAdapter())
 
     try:
         from xigma_i import gui_adapter as _xigma_gui

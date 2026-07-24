@@ -35,13 +35,13 @@ Layout (top -> bottom):
 This GUI is model-agnostic: physics engines are plugged in through the
 ``model_api.ModelAdapter`` registry (see ``model_api.py``) instead of a
 hardcoded import. Two adapters are registered by ``models.discover_models()``:
-``dfe5`` (the dfe5_compton_mc engine, always available) and ``xigma-i``
+``kascade`` (the KASCADE engine, always available) and ``xigma-i``
 (``xigma_i.gui_adapter``, GPU/cupy-only -- shown disabled in the Model menu
 if unavailable). Model-specific controls (crossing angle, quantum toggle,
 .ele loading, new-observable tabs, ...) are greyed out per the active
 model's ``capabilities()``; see ``_apply_model_capabilities``.
 
-Run: ``python3 -m compton_gui.app`` or ``scripts/run_gui.py``.
+Run: ``python3 -m compton_guide.app`` or ``scripts/run_gui.py``.
 """
 
 from __future__ import annotations
@@ -60,10 +60,10 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
-from compton_gui.physics_constants import C_LIGHT, E_CHARGE, HBAR, EPS0, MEC2_EV, MEC2_J
+from compton_guide.physics_constants import C_LIGHT, E_CHARGE, HBAR, EPS0, MEC2_EV, MEC2_J
 
-from compton_gui.model_api import ModelAdapter, SampledSpectrum, validate_results
-from compton_gui.models import discover_models
+from compton_guide.model_api import ModelAdapter, SampledSpectrum, validate_results
+from compton_guide.models import discover_models
 
 # panel colours
 BLUE = "#d6e4f5"
@@ -153,10 +153,10 @@ def add_field_grid(parent, specs, fields, n_cols, bg, width=10, group_starts=(),
 # ---------------------------------------------------------------------------
 # Main application
 # ---------------------------------------------------------------------------
-class DFE4App(tk.Tk):
+class ComptonGuideApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Compton Source Simulator")
+        self.title("Compton-GUIde")
         self.geometry("1280x960+20+10")
 
         self.fields: dict[str, tk.StringVar] = {}
@@ -171,12 +171,12 @@ class DFE4App(tk.Tk):
         self.q_ang: queue.Queue = queue.Queue()
         self.ang_worker: threading.Thread | None = None
 
-        # Model registry: discover once, pick dfe5 as the startup default
+        # Model registry: discover once, pick kascade as the startup default
         # (it's always available; xigma-i may be registered as an
         # UnavailableAdapter if cupy/CUDA isn't usable on this machine).
         self.models = discover_models()
-        self.model_var = tk.StringVar(value="dfe5")
-        self.active_adapter: ModelAdapter = self.models["dfe5"]
+        self.model_var = tk.StringVar(value="kascade")
+        self.active_adapter: ModelAdapter = self.models["kascade"]
         self._trust_warned: set[str] = set()
 
         # SDDS-bunch loading state.  ``loaded_bunch`` is the dict returned by
@@ -328,9 +328,9 @@ class DFE4App(tk.Tk):
     def _show_about(self):
         messagebox.showinfo(
             "About",
-            "Compton Source Simulator\n\n"
+            "Compton-GUIde\n\n"
             "Model-agnostic GUI front-end for pluggable Compton-scattering "
-            "physics engines (dfe5_compton_mc, xigma-i, ...).")
+            "physics engines (kascade, xigma-i, ...).")
 
     def _save_fig(self):
         path = filedialog.asksaveasfilename(defaultextension=".png",
@@ -1172,7 +1172,7 @@ class DFE4App(tk.Tk):
 
 
 def main():
-    app = DFE4App()
+    app = ComptonGuideApp()
     app.mainloop()
 
 

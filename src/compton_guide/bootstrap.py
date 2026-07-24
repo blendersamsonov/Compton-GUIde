@@ -1,8 +1,8 @@
-"""sys.path wiring so ``compton_gui`` can import ``dfe5_compton_mc`` and
+"""sys.path wiring so ``compton_guide`` can import ``kascade`` and
 ``xigma_i`` without either being pip-installed.
 
 Both physics packages currently live in locations that aren't stable
-package-manager paths: ``dfe5_compton_mc`` is a loose script directory
+package-manager paths: ``kascade`` is a loose script directory
 (``MC-Kost/``, sibling of this project) with no packaging at all, and
 ``xigma_i`` lives in a sibling checkout whose directory name and exact
 path are not stable across machines -- e.g. it may be a plain repo clone
@@ -26,12 +26,12 @@ import sys
 from pathlib import Path
 
 _THIS_DIR = Path(__file__).resolve().parent
-# .../compton-gui/src/compton_gui -> .../compton-gui -> .../XIGMA (sibling dir)
+# .../compton-gui/src/compton_guide -> .../compton-gui -> .../XIGMA (sibling dir)
 _XIGMA_ROOT = _THIS_DIR.parents[2]
 
 # Marker files used to recognize each physics package among _XIGMA_ROOT's
 # sibling directories, relative to the sibling directory itself.
-_DFE5_MARKER = "dfe5_compton_mc.py"
+_KASCADE_MARKER = "kascade.py"
 _XIGMA_MARKER = "src/xigma_i/gui_adapter.py"
 
 
@@ -57,7 +57,7 @@ def _discover(root: Path, marker: str, env_var: str) -> Path | None:
         return None
     if len(matches) > 1:
         print(
-            f"compton_gui.bootstrap: multiple candidates found under {root} "
+            f"compton_guide.bootstrap: multiple candidates found under {root} "
             f"(all contain {marker!r}): {[str(m) for m in matches]}; using "
             f"{matches[0]} -- set {env_var} to pin a specific one.",
             file=sys.stderr,
@@ -66,37 +66,37 @@ def _discover(root: Path, marker: str, env_var: str) -> Path | None:
 
 
 def setup_paths() -> None:
-    """Insert the dfe5 and xigma_i source directories into ``sys.path`` if
-    they aren't already importable. Safe to call more than once.
+    """Insert the kascade and xigma_i source directories into ``sys.path``
+    if they aren't already importable. Safe to call more than once.
 
     Resolution order for each, highest priority first:
-      1. The relevant ``COMPTON_GUI_*`` environment variable, if set --
+      1. The relevant ``COMPTON_GUIDE_*`` environment variable, if set --
          used verbatim, no autodiscovery, for checkouts autodiscovery
          can't find (e.g. outside ``_XIGMA_ROOT``).
       2. Autodiscovery: the (alphabetically first, if several) sibling of
          this project containing the package's marker file.
     """
-    dfe5_override = os.environ.get("COMPTON_GUI_DFE5_PATH")
-    dfe5_path = (
-        Path(dfe5_override) if dfe5_override
-        else _discover(_XIGMA_ROOT, _DFE5_MARKER, "COMPTON_GUI_DFE5_PATH")
+    kascade_override = os.environ.get("COMPTON_GUIDE_KASCADE_PATH")
+    kascade_path = (
+        Path(kascade_override) if kascade_override
+        else _discover(_XIGMA_ROOT, _KASCADE_MARKER, "COMPTON_GUIDE_KASCADE_PATH")
     )
 
-    xigma_override = os.environ.get("COMPTON_GUI_XIGMA_SRC")
+    xigma_override = os.environ.get("COMPTON_GUIDE_XIGMA_SRC")
     xigma_src = (
         Path(xigma_override) if xigma_override
         else (lambda d: d / "src" if d is not None else None)(
-            _discover(_XIGMA_ROOT, _XIGMA_MARKER, "COMPTON_GUI_XIGMA_SRC")
+            _discover(_XIGMA_ROOT, _XIGMA_MARKER, "COMPTON_GUIDE_XIGMA_SRC")
         )
     )
 
     for p, label, env_var in (
-        (dfe5_path, "dfe5_compton_mc", "COMPTON_GUI_DFE5_PATH"),
-        (xigma_src, "xigma_i", "COMPTON_GUI_XIGMA_SRC"),
+        (kascade_path, "kascade", "COMPTON_GUIDE_KASCADE_PATH"),
+        (xigma_src, "xigma_i", "COMPTON_GUIDE_XIGMA_SRC"),
     ):
         if p is None:
             print(
-                f"compton_gui.bootstrap: could not find {label} under "
+                f"compton_guide.bootstrap: could not find {label} under "
                 f"{_XIGMA_ROOT} -- set {env_var} to its location if it's "
                 f"installed elsewhere.",
                 file=sys.stderr,

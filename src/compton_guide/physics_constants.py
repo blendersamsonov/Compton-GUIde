@@ -1,11 +1,11 @@
 """CODATA-style physical constants used by the GUI's local formula helpers
 (peak_a0, sigma_e, the spread-estimate box, ...).
 
-Duplicated here rather than imported from ``dfe5_compton_mc`` so this
-project depends on that engine only through ``adapters/dfe5_adapter.py`` --
+Duplicated here rather than imported from ``kascade`` so this project
+depends on that engine only through ``adapters/kascade_adapter.py`` --
 mirrors the same precedent already set by ``xigma_i.gui_adapter``, which
 duplicates the two constants it needs (MEC2_EV, HBAR) instead of
-cross-importing them from dfe5.
+cross-importing them from kascade.
 """
 
 C_LIGHT = 2.99792458e8        # [m/s]

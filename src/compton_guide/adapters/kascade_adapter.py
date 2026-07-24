@@ -1,9 +1,9 @@
-"""ModelAdapter wrapping the existing dfe5_compton_mc engine.
+"""ModelAdapter wrapping the existing kascade engine.
 
 This is the "control" adapter: it moves today's params_to_config/run_simulation
 call pattern behind the model_api.ModelAdapter shape without changing a single
-line of dfe5_compton_mc.py's physics (beyond the additive ph_t/ph_x/ph_y
-fields threaded through Results -- see dfe5_compton_mc.py's Results docstring
+line of kascade.py's physics (beyond the additive ph_t/ph_x/ph_y
+fields threaded through Results -- see kascade.py's Results docstring
 and model_api.py's temporal/spatial dataclasses).
 """
 
@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import numpy as np
 
-import dfe5_compton_mc as _dfe5
-from compton_gui.model_api import (
+import kascade as _kascade
+from compton_guide.model_api import (
     AngularRangeSpectrumResult,
     CommonResults,
     ElectronFinalState,
@@ -35,14 +35,14 @@ def _float(fields: dict, key: str) -> float:
         raise ParamError(f"'{key}' is not a valid number: {fields[key].get()!r}")
 
 
-class Dfe5Adapter:
+class KascadeAdapter:
     def __init__(self):
-        self._last_results = None   # dfe5_compton_mc.Results | None
+        self._last_results = None   # kascade.Results | None
 
     def capabilities(self) -> ModelCapabilities:
         return ModelCapabilities(
-            name="dfe5",
-            display_name="dfe5 (Monte Carlo)",
+            name="kascade",
+            display_name="KASCADE (Monte Carlo)",
             requires_gpu=False,
             supports_crossing_angle=True,
             supports_quantum_toggle=True,
@@ -54,7 +54,7 @@ class Dfe5Adapter:
             requires_recompute_on_collimation_change=False,
             trust_level="production",
             trust_note="Sequential multi-photon inverse-Compton Monte Carlo "
-                       "(the original dfe5_compton_mc engine).",
+                       "(the KASCADE engine).",
             supports_temporal_envelope=True,
             supports_spatial_distribution=True,
             supports_angular_distribution=True,
@@ -70,15 +70,15 @@ class Dfe5Adapter:
     def params_to_config(self, fields: dict, quantum: bool = False):
         """Convert the GUI fields into a physics Config plus a driver dict.
 
-        Ported verbatim from dfe5_gui2.params_to_config.
+        Ported verbatim from the original dfe5_gui2.params_to_config.
         """
         g = lambda k: _float(fields, k)
 
         # --- electrons ---
-        eps0 = g("mean_energy_MeV") * 1e6 / _dfe5.MEC2_EV
-        N_e = g("charge_nC") * 1e-9 / _dfe5.E_CHARGE
+        eps0 = g("mean_energy_MeV") * 1e6 / _kascade.MEC2_EV
+        N_e = g("charge_nC") * 1e-9 / _kascade.E_CHARGE
         sigma_eps_rel = g("rel_spread_pct") / 100.0
-        sigma_par_e = _dfe5.C_LIGHT * (g("bunch_duration_ps") * 1e-12)
+        sigma_par_e = _kascade.C_LIGHT * (g("bunch_duration_ps") * 1e-12)
         emit_x = g("emit_x_mmmrad") * 1e-6 / eps0
         emit_y = g("emit_y_mmmrad") * 1e-6 / eps0
         beta_x = g("beta_x_m")
@@ -89,7 +89,7 @@ class Dfe5Adapter:
         # --- laser ---
         lambda_L = g("laser_wavelength_nm") * 1e-9
         pulse_energy_J = g("laser_energy_mJ") * 1e-3
-        sigma_par_L = _dfe5.C_LIGHT * (g("pulse_duration_ps") * 1e-12)
+        sigma_par_L = _kascade.C_LIGHT * (g("pulse_duration_ps") * 1e-12)
         R_sf = g("rayleigh_length_m")
         sigma0_l = 0.5 * np.sqrt(max(R_sf, 0.0) * lambda_L / np.pi) if R_sf > 0 else 0.0
         rep_rate_hz = g("pulse_frequency_Hz")
@@ -98,7 +98,7 @@ class Dfe5Adapter:
         # --- relative position (mismatch) ---
         delta_x = g("x_mismatch_mm") * 1e-3
         delta_y = g("y_mismatch_mm") * 1e-3
-        delta_z = g("z_mismatch_mm") * 1e-3 + _dfe5.C_LIGHT * (g("time_mismatch_ps") * 1e-12)
+        delta_z = g("z_mismatch_mm") * 1e-3 + _kascade.C_LIGHT * (g("time_mismatch_ps") * 1e-12)
 
         warnings = []
         if sigma0_x <= 0 or sigma0_y <= 0:
@@ -108,7 +108,7 @@ class Dfe5Adapter:
             warnings.append("Rayleigh length must be > 0; using a very small laser "
                             "waist as a fallback.")
 
-        cfg = _dfe5.Config(
+        cfg = _kascade.Config(
             eps0=eps0, sigma_eps_rel=sigma_eps_rel,
             emit_x=max(emit_x, 1e-30), emit_y=max(emit_y, 1e-30),
             sigma0_x=max(sigma0_x, 1e-12), sigma0_y=max(sigma0_y, 1e-12),
@@ -125,11 +125,11 @@ class Dfe5Adapter:
         return cfg, extra
 
     def run(self, cfg, n_mc: int, seed: int, electrons: dict | None = None) -> CommonResults:
-        res = _dfe5.run_simulation(cfg, n_mc=n_mc, seed=seed, electrons=electrons)
+        res = _kascade.run_simulation(cfg, n_mc=n_mc, seed=seed, electrons=electrons)
         self._last_results = res
         s = res.summary
         return CommonResults(
-            model_name="dfe5",
+            model_name="kascade",
             cfg=cfg,
             n_mc=res.n_mc,
             total_yield=s["N_gamma_total"],
@@ -152,14 +152,14 @@ class Dfe5Adapter:
         )
 
     def load_ele_file(self, path: str) -> dict:
-        return _dfe5.load_ele_file(path)
+        return _kascade.load_ele_file(path)
 
     def ele_file_summary(self, bunch: dict) -> dict:
-        return _dfe5.ele_file_summary(bunch)
+        return _kascade.ele_file_summary(bunch)
 
     def spectrum_in_angular_range(self, theta_x_range, theta_y_range, **kwargs):
         """Mask the cached per-photon lab angles against the picked range and
-        histogram the resulting subset -- reuses dfe5_compton_mc.py's own
+        histogram the resulting subset -- reuses kascade.py's own
         angular-window mask pattern (see run_simulation's ``in_window``),
         just applied at the adapter layer instead of only for summary
         counts."""

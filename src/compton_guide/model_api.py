@@ -1,13 +1,13 @@
 """Model-agnostic contract between app.py and physics-engine adapters.
 
-This module knows nothing about ``dfe5_compton_mc`` or ``xigma_i`` -- adapters
+This module knows nothing about ``kascade`` or ``xigma_i`` -- adapters
 for those packages return plain, locally-defined dataclasses that are merely
 *shape-compatible* with the ones below (duck typing), so neither physics
 package needs to import this module or the GUI.
 
 Two physics engines currently target this contract:
 
-  * dfe5 (``adapters/dfe5_adapter.py``) is an event-generator Monte Carlo: it
+  * kascade (``adapters/kascade_adapter.py``) is an event-generator Monte Carlo: it
     samples individual macro-electrons and returns unbinned per-macro-photon
     and per-macro-electron arrays (``SampledSpectrum``, ``ElectronFinalState``,
     ``PhotonMultiplicity``, ``SampledTemporalEnvelope``,
@@ -18,7 +18,7 @@ Two physics engines currently target this contract:
     ``BinnedAngularSpectrum``/``BinnedTemporalEnvelope`` populated; the
     unbinned/per-electron fields and ``spatial_distribution`` are ``None``).
 
-The GUI must branch on which of these are present rather than assume dfe5's
+The GUI must branch on which of these are present rather than assume kascade's
 exact shape -- see ``CommonResults`` field docs below.
 """
 
@@ -35,7 +35,7 @@ import numpy as np
 # ---------------------------------------------------------------------------
 @dataclass
 class SampledSpectrum:
-    """Unbinned per-macro-photon energies (dfe5-style event generator)."""
+    """Unbinned per-macro-photon energies (kascade-style event generator)."""
 
     E_eV: np.ndarray            # per-macro-photon energy [eV]
     weight: float                # macro->real particle weight (multiply counts by this)
@@ -83,7 +83,7 @@ class PhotonMultiplicity:
 
 @dataclass
 class SampledTemporalEnvelope:
-    """Unbinned per-macro-photon emission times (dfe5-style)."""
+    """Unbinned per-macro-photon emission times (kascade-style)."""
 
     t_seconds: np.ndarray        # per-macro-photon emission time [s]
     weight: float
@@ -99,7 +99,7 @@ class BinnedTemporalEnvelope:
 
 @dataclass
 class SampledSpatialDistribution:
-    """Unbinned per-macro-photon transverse position at emission (dfe5-style)."""
+    """Unbinned per-macro-photon transverse position at emission (kascade-style)."""
 
     x: np.ndarray                # per-macro-photon transverse x at emission [m]
     y: np.ndarray
@@ -144,13 +144,13 @@ class CommonResults:
     n_mc: int
     total_yield: float           # physical (weighted) total photon count
     spectrum: SampledSpectrum | BinnedSpectrum
-    summary: dict                # free-form, model-specific scalar diagnostics (dfe5 and
+    summary: dict                # free-form, model-specific scalar diagnostics (kascade and
                                   # xigma-i both happen to include "crossing_angle_rad" and
                                   # "quantum" keys, by convention, not by contract); use the
                                   # top-level CommonResults fields (total_yield, n_mc, ...)
                                   # for anything that must be read in a model-agnostic way
     angular_spectrum: BinnedAngularSpectrum | None = None
-    photon_samples: Any | None = None          # dfe5's raw Results, else None
+    photon_samples: Any | None = None          # kascade's raw Results, else None
     electron_state: ElectronFinalState | None = None
     photon_multiplicity: PhotonMultiplicity | None = None
     temporal_envelope: SampledTemporalEnvelope | BinnedTemporalEnvelope | None = None
@@ -221,12 +221,12 @@ class ModelAdapter(Protocol):
 
     def extra_params(self) -> list[tuple[str, float, str]]:
         """Model-specific numeric fields with no shared-panel analogue
-        (dfe5's Electrons/Laser/Compton panels), as (label, default, key)
+        (kascade's Electrons/Laser/Compton panels), as (label, default, key)
         triples -- the same shape app.py's add_field_grid already consumes.
         The GUI renders these in a dedicated pane that's rebuilt whenever the
         active model changes, and feeds the resulting values into the same
         flat ``fields`` dict passed to ``params_to_config``. Return ``[]`` if
-        the model has none (e.g. dfe5 today)."""
+        the model has none (e.g. kascade today)."""
         ...
 
     def params_to_config(self, fields: dict, quantum: bool) -> tuple[Any, dict]: ...
