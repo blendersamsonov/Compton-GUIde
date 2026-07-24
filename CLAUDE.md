@@ -72,10 +72,15 @@ python3 scripts/run_gui.py
 
 Needs `numpy`, `matplotlib`, system Tk (`tkinter`), and — only if you want
 `xigma-i` enabled rather than greyed-out — `cupy` + a working CUDA setup.
-`bootstrap.py` inserts `../MC-Kost` and the `xigma_i` repo's `src/` onto
-`sys.path` automatically; override with `COMPTON_GUI_DFE5_PATH` /
-`COMPTON_GUI_XIGMA_SRC` env vars if your checkout layout differs from
-plain sibling directories under the same parent.
+`bootstrap.py` puts `dfe5_compton_mc`/`xigma_i` onto `sys.path`
+automatically by scanning this project's sibling directories for one
+containing `dfe5_compton_mc.py` (for dfe5) or `src/xigma_i/gui_adapter.py`
+(for xigma_i) — content-based, not a hardcoded default path, so it
+survives both sibling directories being named differently on different
+machines. Override with `COMPTON_GUI_DFE5_PATH` / `COMPTON_GUI_XIGMA_SRC`
+env vars if either checkout lives outside this project's sibling
+directories entirely, or if autodiscovery finds more than one candidate
+and picks the wrong one (it warns to stderr when that happens).
 
 On this dev machine specifically: system Python has no pip/cupy/matplotlib.
 There's a conda env (`miniforge3`, env name `core`) that already has
