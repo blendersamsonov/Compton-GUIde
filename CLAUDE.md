@@ -78,6 +78,43 @@ resulting values into the same flat `fields` dict passed to
 declares `beta_ff`/`phi_pol` (its own extras with no `kascade` analogue).
 Return `[]` if a model has nothing extra to add.
 
+## Parameter semantics & units (`physics_params/`)
+
+`src/compton_guide/physics_params/` implements `Conventions-and-units.md`'s
+design: every laser/electron width, duration or amplitude travels as a
+`PhysicalQuantity` (value + unit + `PhysicalMeaning` + a convention enum —
+`WidthConvention`/`TimeConvention`/`AmplitudeConvention`), gets normalised
+through one project-wide canonical convention per meaning (`canonical.py`),
+and is adapted out to a specific model's own convention/units via
+`adapt_to_model()` (`adapter.py`) against that model's `ModelSpec`
+(`schemas/xigma.py`'s `XIGMA_SPEC`, `schemas/kascade.py`'s `KASCADE_SPEC`).
+Units are handled by `pint` (`units.py`), including a custom `"light_time"`
+context so a length can stand in for `c * duration` — both engines store
+pulse/bunch length that way (`Config.sigma_par_L`/`sigma_par_e`).
+
+Both schemas were written by reading each engine's actual source
+(`core.py`'s `set_laser_parameters` docstring, `kascade.py`'s
+`laser_density`/`Config` field comments), not guessed — and turn out to
+declare the *same* convention (RMS of the density/intensity profile,
+lengths standing in for durations, peak — not RMS — `a0`) on every field
+both `Config`s share, which is why `KASCADE_SPEC`'s docstring calls this
+"machine-checking" a fact rather than fixing a real mismatch: both
+adapters' hand-written `params_to_config` already agreed, this just makes
+that agreement explicit and enforced instead of implicit and silently
+breakable.
+
+**Not yet wired into `params_to_config`** in either adapter — those still
+do the FWHM/waist/duration arithmetic by hand (see the docstring atop
+`schemas/xigma.py`). `scripts/physics_params_demo.py` is a GPU-free,
+tkinter-free demo/self-check: builds inputs in mixed conventions (a FWHM
+in µm, a duration in ps), adapts to both specs, and asserts the two
+models' outputs agree and that the FWHM→sigma and duration→length
+conversions actually ran.
+
+```bash
+python3 scripts/physics_params_demo.py
+```
+
 ## Running it
 
 ```bash
@@ -150,6 +187,7 @@ distribution, angular distribution, angular-range spectrum):
 - No automated test for `app.py`'s actual Tkinter rendering (only the
   adapter/model layer is covered by `headless_test.py`) — testing the real
   widget tree needs a display (or Xvfb), which hasn't been set up.
-- `Conventions-and-units.md` at the repo root is a design sketch for a
-  future parameter-semantics/unit-normalization layer (pint-based) — not
-  implemented, not wired into anything yet.
+- `Conventions-and-units.md` at the repo root is now implemented as
+  `physics_params/` (see above), with schemas for both models — but not
+  yet wired into either adapter's `params_to_config`, so it doesn't change
+  any current behavior yet.
