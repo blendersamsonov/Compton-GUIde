@@ -12,6 +12,7 @@ from __future__ import annotations
 import numpy as np
 
 import kascade as _kascade
+from compton_suite import constants as _suite_constants
 from compton_guide.model_api import (
     AngularRangeSpectrumResult,
     CommonResults,
@@ -75,10 +76,10 @@ class KascadeAdapter:
         g = lambda k: _float(fields, k)
 
         # --- electrons ---
-        eps0 = g("mean_energy_MeV") * 1e6 / _kascade.MEC2_EV
-        N_e = g("charge_nC") * 1e-9 / _kascade.E_CHARGE
+        eps0 = g("mean_energy_MeV") * 1e6 / _suite_constants.MEC2_EV
+        N_e = g("charge_nC") * 1e-9 / _suite_constants.E_CHARGE
         sigma_eps_rel = g("rel_spread_pct") / 100.0
-        sigma_par_e = _kascade.C_LIGHT * (g("bunch_duration_ps") * 1e-12)
+        sigma_par_e = _suite_constants.C_LIGHT * (g("bunch_duration_ps") * 1e-12)
         emit_x = g("emit_x_mmmrad") * 1e-6 / eps0
         emit_y = g("emit_y_mmmrad") * 1e-6 / eps0
         beta_x = g("beta_x_m")
@@ -89,7 +90,7 @@ class KascadeAdapter:
         # --- laser ---
         lambda_L = g("laser_wavelength_nm") * 1e-9
         pulse_energy_J = g("laser_energy_mJ") * 1e-3
-        sigma_par_L = _kascade.C_LIGHT * (g("pulse_duration_ps") * 1e-12)
+        sigma_par_L = _suite_constants.C_LIGHT * (g("pulse_duration_ps") * 1e-12)
         R_sf = g("rayleigh_length_m")
         sigma0_l = 0.5 * np.sqrt(max(R_sf, 0.0) * lambda_L / np.pi) if R_sf > 0 else 0.0
         rep_rate_hz = g("pulse_frequency_Hz")
@@ -98,7 +99,7 @@ class KascadeAdapter:
         # --- relative position (mismatch) ---
         delta_x = g("x_mismatch_mm") * 1e-3
         delta_y = g("y_mismatch_mm") * 1e-3
-        delta_z = g("z_mismatch_mm") * 1e-3 + _kascade.C_LIGHT * (g("time_mismatch_ps") * 1e-12)
+        delta_z = g("z_mismatch_mm") * 1e-3 + _suite_constants.C_LIGHT * (g("time_mismatch_ps") * 1e-12)
 
         warnings = []
         if sigma0_x <= 0 or sigma0_y <= 0:

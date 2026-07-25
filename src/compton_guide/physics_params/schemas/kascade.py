@@ -23,8 +23,7 @@ machine-checkable instead of a coincidence nobody would notice breaking.
 
 from __future__ import annotations
 
-from ..enums import AmplitudeConvention, PhysicalMeaning, TimeConvention, WidthConvention
-from ..schema import ParameterSpec
+from compton_suite import AmplitudeConvention, ParameterSpec, PhysicalMeaning, TimeConvention, WidthConvention
 
 KASCADE_SPEC: dict[str, ParameterSpec] = {
     "sigma0_x": ParameterSpec(

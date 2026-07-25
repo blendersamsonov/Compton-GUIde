@@ -1,24 +1,37 @@
-"""Parameter semantics & unit normalisation layer, per ``Conventions-and-units.md``.
+"""Thin re-export of ``compton_suite``'s parameter-semantics/unit
+normalisation framework, per ``Conventions-and-units.md``.
 
-Solves two independent problems for parameters shared between this GUI and
-its pluggable physics engines (xigma-i, kascade):
+The framework itself (``PhysicalQuantity``, the enums, canonical
+conversion, ``ParameterSpec``/``ModelSpec``, ``adapt_to_model``) lives in
+the sibling ``compton_suite`` repo now, found via
+``compton_guide.bootstrap.setup_paths()`` -- **not defined here**, so
+``compton_guide.physics_params.PhysicalQuantity`` is the literal same
+class as e.g. ``xigma_i.params.PhysicalQuantity``, not an independently-
+defined look-alike (an earlier version of this move gave each repo its own
+copy, which broke exactly that; see git history if curious). This module
+exists so existing `from compton_guide.physics_params import ...` call
+sites don't need to change, and so `compton_guide.physics_params.
+schemas.kascade`'s `KASCADE_SPEC` has somewhere local to import the
+framework types from.
 
-1. **Units** -- handled by ``pint`` (see ``units.py``).
-2. **Semantics/convention** -- is a "width" the RMS of the intensity
-   profile, the FWHM, or the 1/e^2 radius? Is a "duration" a sigma or a
-   FWHM? Is an amplitude peak or RMS? Handled by this module: every value
-   is a ``PhysicalQuantity`` (value + unit + meaning + convention), never a
-   bare float, converted through one project-wide canonical representation
-   per meaning (``canonical.py``) and out to whatever convention/unit a
-   specific model declares in its ``ModelSpec`` (``schemas/``).
+**xigma-i's schema moved out of this repo.** `schemas/xigma.py`'s
+`XIGMA_SPEC`/`XIGMA_DIAGNOSTIC_SPEC` now live in that model's own repo as
+`xigma_i.params` (see that repo's `CLAUDE.md`, "Parameter semantics &
+units") -- the model declares its own parameter contract instead of the
+GUI declaring it on the model's behalf. `kascade` hasn't had the same
+move yet, so `schemas/kascade.py`'s `KASCADE_SPEC` still lives here.
 
-Typical use (see ``schemas/xigma.py`` and ``schemas/kascade.py`` for the
-concrete specs, and ``scripts/physics_params_demo.py`` for a full example):
+Typical use (see `schemas/kascade.py` for a concrete local spec,
+`xigma_i.params` for xigma-i's, and `scripts/physics_params_demo.py` for a
+full cross-repo example):
+
+    from compton_guide import bootstrap
+    bootstrap.setup_paths()
 
     from compton_guide.physics_params import (
         PhysicalQuantity, PhysicalMeaning, WidthConvention, adapt_to_model,
     )
-    from compton_guide.physics_params.schemas.xigma import XIGMA_SPEC
+    from xigma_i.params import XIGMA_SPEC
 
     laser_width = PhysicalQuantity(
         magnitude=5.0, unit="micrometer",
@@ -29,17 +42,29 @@ concrete specs, and ``scripts/physics_params_demo.py`` for a full example):
     # adapted["sigma0_l"] is now in XIGMA_SPEC's own convention/unit
 """
 
-from .adapter import adapt_to_model, params_to_floats
-from .canonical import CANONICAL_CONVENTIONS, CANONICAL_UNIT, from_canonical, to_canonical
-from .enums import AmplitudeConvention, PhysicalMeaning, TimeConvention, WidthConvention
-from .quantities import PhysicalQuantity
-from .schema import ModelSpec, ParameterSpec
-from .validation import (
+from .. import bootstrap
+
+bootstrap.setup_paths()
+
+from compton_suite import (  # noqa: E402
+    CANONICAL_CONVENTIONS,
+    CANONICAL_UNIT,
+    AmplitudeConvention,
     MeaningMismatchError,
     MissingConventionError,
+    ModelSpec,
+    ParameterSpec,
+    PhysicalMeaning,
+    PhysicalQuantity,
     PhysicsParamsError,
+    TimeConvention,
     UnitMismatchError,
     UnknownConversionError,
+    WidthConvention,
+    adapt_to_model,
+    from_canonical,
+    params_to_floats,
+    to_canonical,
     validate_against_spec,
     validate_quantity,
 )
