@@ -177,7 +177,6 @@ class ComptonGuideApp(tk.Tk):
         self.models = discover_models()
         self.model_var = tk.StringVar(value="kascade")
         self.active_adapter: ModelAdapter = self.models["kascade"]
-        self._trust_warned: set[str] = set()
 
         # SDDS-bunch loading state.  ``loaded_bunch`` is the dict returned by
         # the active adapter's ``load_ele_file`` (per-particle arrays + header
@@ -319,11 +318,6 @@ class ComptonGuideApp(tk.Tk):
             text=f"Model: {caps.display_name} - {caps.trust_level}"
                  + (f"  ({caps.trust_note})" if caps.trust_level != "production" else ""),
             fg=colour)
-        if caps.trust_level.startswith("experimental") and caps.name not in self._trust_warned:
-            self._trust_warned.add(caps.name)
-            messagebox.showwarning(
-                f"{caps.display_name}: experimental model",
-                caps.trust_note)
 
     def _show_about(self):
         messagebox.showinfo(
